@@ -20,7 +20,7 @@ You open a .pptx, the page walks you through each slide that needs a title or a 
   - If the browser blocks storage, the page says so and warns before the tab closes.
 
 - **Safe text.** Characters XML doesn't allow, which usually arrive by pasting from a PDF, are removed before they're written, so they can't corrupt the file.
-- **Size limits.** Files over 250 MB, files that unpack to more than 1 GB, and files with more than 20,000 parts are refused with a plain message, so a broken or crafted file can't freeze the tab. TIFF previews over 50 million pixels are skipped.
+- **Size limits.** Files over 250 MB, files that unpack to more than 500 MB, and files with more than 20,000 parts are refused with a plain message, so a broken or crafted file can't freeze the tab. TIFF previews over 50 million pixels are skipped.
 
 ### What it doesn't do
 

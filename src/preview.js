@@ -8,15 +8,33 @@ let worker = null;
 let nextId = 0;
 const pending = new Map();
 
+const DECODE_TIMEOUT_MS = 15000;
+
+// A worker that crashed, failed to load or hung can't be trusted with more jobs:
+// fail everything waiting on it and start a fresh worker next time.
+function resetWorker(reason) {
+  worker?.terminate();
+  worker = null;
+  for (const job of pending.values()) {
+    clearTimeout(job.timer);
+    job.reject(new Error(reason));
+  }
+  pending.clear();
+}
+
 function tiffWorker() {
   if (!worker) {
     worker = new Worker(new URL("./tiff-worker.js", import.meta.url), { type: "module" });
     worker.onmessage = ({ data }) => {
       const job = pending.get(data.id);
+      if (!job) return;
+      clearTimeout(job.timer);
       pending.delete(data.id);
       if (data.error) job.reject(new Error(data.error));
       else job.resolve(data);
     };
+    worker.onerror = () => resetWorker("The image decoder stopped working.");
+    worker.onmessageerror = () => resetWorker("The image decoder sent something unreadable.");
   }
   return worker;
 }
@@ -28,7 +46,11 @@ async function tiffToUrl(bytes) {
   const id = nextId++;
   const copy = bytes.slice();
   const { width, height, rgba } = await new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject });
+    const timer = setTimeout(
+      () => resetWorker("The image took too long to decode."),
+      DECODE_TIMEOUT_MS,
+    );
+    pending.set(id, { resolve, reject, timer });
     tiffWorker().postMessage({ id, bytes: copy }, [copy.buffer]);
   });
   const canvas = document.createElement("canvas");

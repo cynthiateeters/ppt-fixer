@@ -4,7 +4,9 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from "fflate";
 
 const TITLE_SP =
-  /<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<p:ph\b[^>]*type="(?:title|ctrTitle)"[\s\S]*?<\/p:sp>/;
+  /<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<p:ph\b[^>]*type=["'](?:title|ctrTitle)["'][\s\S]*?<\/p:sp>/;
+// XML allows either quote around attribute values. PowerPoint writes double quotes,
+// but other tools may not, so every attribute match below accepts both.
 const PIC = /<p:pic>[\s\S]*?<\/p:pic>/g;
 const DECORATIVE_URI = "{C183D7F6-B498-43B3-948B-1728B52AA6E4}";
 
@@ -35,8 +37,8 @@ const encodeText = (s) =>
 const encodeAttr = (s) => encodeText(s).replace(/"/g, "&quot;");
 
 const attr = (tag, name) => {
-  const m = tag.match(new RegExp(`\\s${name}="([^"]*)"`));
-  return m ? decodeXml(m[1]) : null;
+  const m = tag.match(new RegExp(`\\s${name}=(?:"([^"]*)"|'([^']*)')`));
+  return m ? decodeXml(m[1] ?? m[2]) : null;
 };
 
 const textOf = (xml) =>
@@ -109,7 +111,7 @@ export function sniffImage(bytes) {
 // Position and size of a shape: { x, y, w, h } in EMUs, or null.
 const ownRect = (xml) => {
   const m = xml.match(
-    /<p:spPr>\s*<a:xfrm\b[^>]*>\s*<a:off x="(-?\d+)" y="(-?\d+)"\/>\s*<a:ext cx="(\d+)" cy="(\d+)"/,
+    /<p:spPr>\s*<a:xfrm\b[^>]*>\s*<a:off x=["'](-?\d+)["'] y=["'](-?\d+)["']\s*\/>\s*<a:ext cx=["'](\d+)["'] cy=["'](\d+)["']/,
   );
   return m ? { x: +m[1], y: +m[2], w: +m[3], h: +m[4] } : null;
 };
@@ -140,7 +142,7 @@ const overlaps = (a, b) =>
 
 function readPicture(xml, index, rels, slidePath, slideArea, layoutXml, masterXml) {
   const cNvPr = xml.match(/<p:cNvPr\b[^>]*\/?>/)?.[0] ?? "";
-  const rId = xml.match(/<a:blip\b[^>]*r:embed="([^"]+)"/)?.[1];
+  const rId = attr(xml.match(/<a:blip\b[^>]*>/)?.[0] ?? "", "r:embed");
   const target = rId ? rels[rId] : null;
   const rect = inheritedRect(xml, layoutXml, masterXml);
   const area = rect ? rect.w * rect.h : 0;
@@ -158,7 +160,9 @@ function readPicture(xml, index, rels, slidePath, slideArea, layoutXml, masterXm
 // Limits that keep a malformed or crafted file from exhausting the tab's memory.
 export const LIMITS = {
   inputBytes: 250 * 1024 * 1024, // the .pptx file itself
-  expandedBytes: 1024 * 1024 * 1024, // all parts once unzipped
+  // All parts once unzipped. Pictures barely compress, so a real deck unpacks to little more than
+  // its file size. Saving holds a second copy, so this keeps peak memory well under 1 GB.
+  expandedBytes: 500 * 1024 * 1024,
   entries: 20000, // parts inside the zip
 };
 
@@ -176,7 +180,9 @@ function unzipWithinLimits(bytes, limits) {
     );
   let total = 0;
   let count = 0;
-  return unzipSync(bytes, {
+  // Copy into an object with no prototype, so a part named "constructor" or "toString"
+  // can't be confused with a built-in JavaScript property.
+  const parts = unzipSync(bytes, {
     filter: ({ originalSize }) => {
       count += 1;
       total += originalSize;
@@ -189,27 +195,30 @@ function unzipWithinLimits(bytes, limits) {
       return true;
     },
   });
+  return Object.assign(Object.create(null), parts);
 }
+
+const hasPart = (files, path) => typeof path === "string" && Object.hasOwn(files, path);
 
 export function loadDeck(bytes, limits = LIMITS) {
   const files = unzipWithinLimits(bytes, limits);
-  const read = (p) => (files[p] ? strFromU8(files[p]) : null);
+  const read = (p) => (hasPart(files, p) ? strFromU8(files[p]) : null);
 
   const presentation = read("ppt/presentation.xml");
   if (!presentation)
     throw new Error("This file doesn't look like a PowerPoint deck (no ppt/presentation.xml).");
-  const size = presentation.match(/<p:sldSz cx="(\d+)" cy="(\d+)"/);
+  const size = presentation.match(/<p:sldSz cx=["'](\d+)["'] cy=["'](\d+)["']/);
   const slideWidth = size ? Number(size[1]) : 12192000;
   const slideHeight = size ? Number(size[2]) : 6858000;
   const presRels = parseRels(read("ppt/_rels/presentation.xml.rels"));
 
-  const slides = [...presentation.matchAll(/<p:sldId\b[^>]*r:id="([^"]+)"/g)].map((m, i) => {
-    const path = resolvePath("ppt/presentation.xml", presRels[m[1]]);
+  const slides = [...presentation.matchAll(/<p:sldId\b[^>]*>/g)].map((m, i) => {
+    const path = resolvePath("ppt/presentation.xml", presRels[attr(m[0], "r:id")]);
     const xml = read(path);
     const rels = parseRels(read(path.replace("slides/", "slides/_rels/") + ".rels"));
     const titleSp = xml.match(TITLE_SP)?.[0] ?? null;
     const title = titleSp ? textOf(titleSp).join(" ").trim() : "";
-    const titleHidden = !!titleSp && /<p:cNvPr\b[^>]*\shidden="1"/.test(titleSp);
+    const titleHidden = !!titleSp && /<p:cNvPr\b[^>]*\shidden=["'](?:1|true)["']/.test(titleSp);
     const layoutPath = Object.values(rels).find((t) => /slideLayout/.test(t));
     const layoutFull = layoutPath ? resolvePath(path, layoutPath) : null;
     const layoutXml = layoutFull ? read(layoutFull) : null;
@@ -227,7 +236,8 @@ export function loadDeck(bytes, limits = LIMITS) {
       masterXml,
     );
     // A picture used as the slide's own background. It can't carry alt text.
-    const bgRId = xml.match(/<p:bg>[\s\S]*?<a:blip\b[^>]*r:embed="([^"]+)"[\s\S]*?<\/p:bg>/)?.[1];
+    const bgBlip = xml.match(/<p:bg>[\s\S]*?(<a:blip\b[^>]*>)[\s\S]*?<\/p:bg>/)?.[1];
+    const bgRId = bgBlip ? attr(bgBlip, "r:embed") : null;
     const background = bgRId && rels[bgRId] ? { mediaPath: resolvePath(path, rels[bgRId]) } : null;
     const bodyText = textOf(xml.replace(TITLE_SP, "").replace(PIC, ""));
     const hasNotes = Object.values(rels).some((t) => /notesSlide/.test(t));
@@ -262,7 +272,8 @@ export function loadDeck(bytes, limits = LIMITS) {
   });
 
   const core = read("docProps/core.xml") ?? "";
-  const docTitle = decodeXml(core.match(/<dc:title>([^<]*)<\/dc:title>/)?.[1] ?? "");
+  // The title element may carry attributes, such as xml:lang.
+  const docTitle = decodeXml(core.match(/<dc:title\b[^>]*>([^<]*)<\/dc:title>/)?.[1] ?? "");
 
   return { files, slides, slideWidth, slideHeight, docTitle };
 }
@@ -283,7 +294,7 @@ export function summarize(deck) {
 }
 
 export function mediaBytes(deck, mediaPath) {
-  return mediaPath ? (deck.files[mediaPath] ?? null) : null;
+  return hasPart(deck.files, mediaPath) ? deck.files[mediaPath] : null;
 }
 
 // Position for a title that must not show: just above the top edge of the slide.
@@ -300,12 +311,12 @@ function setTitle(xml, text, offSlide, deck) {
   const m = xml.match(TITLE_SP);
   if (m) {
     // Replacer functions throughout: a replacement string would treat $& or $' in typed text as patterns.
-    let sp = m[0].replace(/(<p:cNvPr\b[^>]*?)\shidden="1"/, "$1");
+    let sp = m[0].replace(/(<p:cNvPr\b[^>]*?)\shidden=["'](?:1|true)["']/, "$1");
     sp = sp.replace(/<p:txBody>[\s\S]*<\/p:txBody>/, () => tx);
     if (spPr) sp = sp.replace(/<p:spPr\/>|<p:spPr>[\s\S]*?<\/p:spPr>/, () => spPr);
     return xml.replace(m[0], () => sp);
   }
-  const ids = [...xml.matchAll(/<p:cNvPr id="(\d+)"/g)].map((x) => Number(x[1]));
+  const ids = [...xml.matchAll(/<p:cNvPr\b[^>]*>/g)].map((x) => Number(attr(x[0], "id")) || 0);
   const sp = `<p:sp><p:nvSpPr><p:cNvPr id="${Math.max(0, ...ids) + 1}" name="Title"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr>${spPr ?? "<p:spPr/>"}${tx}</p:sp>`;
   // Insert first so the title is also first in reading order.
   return xml.replace("</p:grpSpPr>", () => "</p:grpSpPr>" + sp);
@@ -315,7 +326,7 @@ function setPicture(picXml, { alt, decorative }) {
   return picXml.replace(
     /<p:cNvPr\b([^>]*?)(\/>|>([\s\S]*?)<\/p:cNvPr>)/,
     (whole, attrs, _end, inner = "") => {
-      let a = attrs.replace(/\sdescr="[^"]*"/, "");
+      let a = attrs.replace(/\sdescr=(?:"[^"]*"|'[^']*')/g, "");
       const text = cleanXmlText(alt).trim();
       if (!decorative && text) a += ` descr="${encodeAttr(text)}"`;
       let body = inner.replace(
@@ -357,11 +368,16 @@ export function applyEdits(deck, edits) {
   const docTitle = typeof edits.docTitle === "string" ? cleanXmlText(edits.docTitle).trim() : "";
   if (docTitle && out["docProps/core.xml"]) {
     const core = strFromU8(out["docProps/core.xml"]);
-    const t = `<dc:title>${encodeText(docTitle)}</dc:title>`;
+    const text = encodeText(docTitle);
+    // Keep any attributes on an existing title element, and never add a second one.
+    const existing = /<dc:title\b([^>]*?)(?:\/>|>[^<]*<\/dc:title>)/;
     out["docProps/core.xml"] = strToU8(
-      /<dc:title>[^<]*<\/dc:title>|<dc:title\/>/.test(core)
-        ? core.replace(/<dc:title>[^<]*<\/dc:title>|<dc:title\/>/, () => t)
-        : core.replace(/(<cp:coreProperties\b[^>]*>)/, (open) => open + t),
+      existing.test(core)
+        ? core.replace(existing, (_, attrs) => `<dc:title${attrs}>${text}</dc:title>`)
+        : core.replace(
+            /(<cp:coreProperties\b[^>]*>)/,
+            (open) => `${open}<dc:title>${text}</dc:title>`,
+          ),
     );
   }
   // [Content_Types].xml goes first, matching how PowerPoint writes the zip.
