@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Slide title and alt text fixer</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <p class="site-name">Slide title and alt text fixer <span class="badge">proof of concept</span></p>
+    </header>
+
+    <main id="app">
+      <section id="start" class="start">
+        <h1>Fix slide titles and alt text in a PowerPoint file</h1>
+        <p>
+          Open a .pptx file and this page walks you through every slide that's missing a title or a picture
+          description. Type them in, then download a fixed copy to upload to Canvas.
+        </p>
+        <p class="privacy">Your file stays on this computer. Nothing is uploaded anywhere.</p>
+        <p>
+          What you type is saved in this browser as you go, so you can close the tab and pick up later by opening
+          the same file again. Saved work is removed after 30 days.
+        </p>
+
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+          <span class="drop-main">Choose a .pptx file</span>
+          <span class="drop-sub">or drag one onto this box</span>
+        </label>
+        <p id="start-error" class="error" role="alert" hidden></p>
+      </section>
+
+      <section id="editor" class="editor" hidden>
+        <div class="deck-bar">
+          <div>
+            <h1 id="deck-name" class="deck-name"></h1>
+            <p id="deck-status" class="deck-status" aria-live="polite"></p>
+            <p id="save-status" class="save-status"></p>
+          </div>
+          <div class="deck-actions">
+            <button type="button" id="download" class="primary">Download fixed copy</button>
+            <button type="button" id="close-deck" class="quiet">Open a different file</button>
+          </div>
+        </div>
+
+        <div id="restored" class="restored" role="status" hidden>
+          <p id="restored-text"></p>
+          <button type="button" id="start-over" class="quiet">Start over from the file</button>
+        </div>
+
+        <div class="layout">
+          <nav class="slide-nav" aria-label="Slides">
+            <label class="toggle"><input type="checkbox" id="only-needs-work" checked /> Only slides that need work</label>
+            <ol id="slide-list" class="slide-list"></ol>
+            <details class="doc-props">
+              <summary>File properties</summary>
+              <label for="doc-title">Document title</label>
+              <input type="text" id="doc-title" />
+              <p class="hint">Ally copies this into the PDF and HTML versions students download.</p>
+            </details>
+            <details class="doc-props">
+              <summary>Saved work</summary>
+              <p class="hint">
+                Your typing for this file is kept in this browser for 30 days. If other people use this same computer
+                login, you can delete your saved work here.
+              </p>
+              <button type="button" id="forget" class="quiet">Delete saved work for this file</button>
+            </details>
+          </nav>
+
+          <article id="slide" class="slide" tabindex="-1"></article>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
