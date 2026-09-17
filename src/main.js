@@ -424,8 +424,10 @@ async function openFile(file) {
     );
     const first = deck.slides.find(slideNeededWork) ?? deck.slides[0];
     state.current = first ? first.number - 1 : 0;
-    state.onlyNeedsWork = deck.slides.some(slideNeededWork);
-    $("only-needs-work").checked = state.onlyNeedsWork;
+    // Off by default: seeing every slide keeps the surrounding context, which
+    // the slides that need work often depend on (a section slide, a caption).
+    state.onlyNeedsWork = false;
+    $("only-needs-work").checked = false;
     $("deck-name").textContent = file.name;
     $("doc-title").value = state.edits.docTitle;
     $("start").hidden = true;

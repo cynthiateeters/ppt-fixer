@@ -2,7 +2,7 @@
 
 A proof of concept: a web page that fixes two problems Ally flags in image-heavy PowerPoint decks, missing slide titles and missing alt text.
 
-You open a .pptx, the page walks you through each slide that needs a title or a picture description, you type them in, and it gives you a fixed copy to upload to Canvas. The file never leaves your computer.
+You open a .pptx, the page walks you through the deck a slide at a time, you type titles and picture descriptions where they're missing, and it gives you a fixed copy to upload to Canvas. The file never leaves your computer.
 
 ## Beginner's guide
 
@@ -10,6 +10,7 @@ You open a .pptx, the page walks you through each slide that needs a title or a 
 
 - **Slide titles.** Every untitled slide gets a box to type a title. On slides where a picture covers the slide or overlaps the title area, the title is placed just above the slide. It doesn't show when presenting, but screen readers and Ally still find it.
 - **Alt text.** Every picture gets a preview and a text box. You can mark a picture as decorative instead. When the same picture appears on several slides, one description can fill them all.
+- **Every slide, in order.** The list shows the whole deck, and it opens on the first slide that needs work. "Only slides that need work" hides the rest. It's off by default, because a slide that needs a description often depends on the ones around it, such as a section slide or a caption.
 - **PowerPoint's guesses.** Older PowerPoint saved automatic alt text ending in "Description automatically generated". The page treats that as missing and flags it "PowerPoint guessed this" until you rewrite it or remove that line. Text you don't touch is saved unchanged. Only English is recognized for now. Other languages can be added in `AUTO_ALT_MARKERS` in `src/pptx.js`, using the exact line from a real deck.
 - **File properties.** The document title can be corrected. Ally copies it into the PDF and HTML versions students download.
 - **Download.** The fixed copy is saved as `<name> (fixed).pptx`. The original isn't changed.
