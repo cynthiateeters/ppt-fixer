@@ -75,10 +75,10 @@ This rule comes from sandbox tests in Ally on 2026-09-16, on one image-heavy 25-
 - With titles above the slide and alt text on every picture, the deck scored 100%.
 - A second deck from a different course, fixed by hand in the live page, also scored 100%. It had 18 slides and 31 pictures, 2 of them marked decorative, with 7 titles placed above the slide.
 - In Ally's HTML and tagged PDF versions, those titles came through as headings and the alt text came through word for word.
+- A fixed deck opened in PowerPoint for Mac with no repair prompt (2026-09-17).
 
 ## Not tested yet
 
-- **Opening fixed decks in PowerPoint.** Output files are valid zip archives with well-formed XML. A PowerPoint open-and-repair check is still needed.
 - **Decks from other courses.** It's been run only against decks from three Arts and Design courses.
 
 ## How it works
