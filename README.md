@@ -1,6 +1,6 @@
 # ppt-fixer
 
-A proof of concept: a web page that fixes the two PowerPoint problems Ally flags most in image-heavy slide decks, missing slide titles and missing alt text.
+A proof of concept: a web page that fixes two problems Ally flags in image-heavy PowerPoint decks, missing slide titles and missing alt text.
 
 You open a .pptx, the page walks you through each slide that needs a title or a picture description, you type them in, and it gives you a fixed copy to upload to Canvas. The file never leaves your computer.
 
@@ -18,7 +18,6 @@ You open a .pptx, the page walks you through each slide that needs a title or a 
   - Saved work older than 30 days is removed when the page loads.
   - If other people use the same computer login, "Delete saved work for this file" removes it and stops saving until the file is reopened.
   - If the browser blocks storage, the page says so and warns before the tab closes.
-
 - **Safe text.** Characters XML doesn't allow, which usually arrive by pasting from a PDF, are removed before they're written, so they can't corrupt the file.
 - **Size limits.** Files over 250 MB, files that unpack to more than 500 MB, and files with more than 20,000 parts are refused with a plain message, so a broken or crafted file can't freeze the tab. TIFF previews over 50 million pixels are skipped.
 
@@ -68,7 +67,7 @@ node scripts/check-folder.js <folder-of-pptx-files>
 
 ## Why titles go above the slide
 
-This rule comes from sandbox tests in Ally on 2026-09-16, on one image-heavy 25-slide deck:
+This rule comes from sandbox tests in Ally on 2026-09-16, starting with one image-heavy 25-slide deck:
 
 - A title typed into the slide's own title box on a full-picture slide was flagged for insufficient contrast. That happened even when the picture covered the title.
 - The same titles moved just above the slide cleared the contrast flag.
@@ -79,7 +78,7 @@ This rule comes from sandbox tests in Ally on 2026-09-16, on one image-heavy 25-
 
 ## Not tested yet
 
-- **Decks from other courses.** It's been run only against decks from three Arts and Design courses.
+- **Decks from other departments.** It's only been run against decks from Arts and Design courses.
 
 ## How it works
 
