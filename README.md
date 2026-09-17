@@ -10,6 +10,7 @@ You open a .pptx, the page walks you through each slide that needs a title or a 
 
 - **Slide titles.** Every untitled slide gets a box to type a title. On slides where a picture covers the slide or overlaps the title area, the title is placed just above the slide. It doesn't show when presenting, but screen readers and Ally still find it.
 - **Alt text.** Every picture gets a preview and a text box. You can mark a picture as decorative instead. When the same picture appears on several slides, one description can fill them all.
+- **PowerPoint's guesses.** Older PowerPoint saved automatic alt text ending in "Description automatically generated". The page treats that as missing and flags it "PowerPoint guessed this" until you rewrite it or remove that line. Text you don't touch is saved unchanged. Only English is recognized for now. Other languages can be added in `AUTO_ALT_MARKERS` in `src/pptx.js`, using the exact line from a real deck.
 - **File properties.** The document title can be corrected. Ally copies it into the PDF and HTML versions students download.
 - **Download.** The fixed copy is saved as `<name> (fixed).pptx`. The original isn't changed.
 - **Saved work.** What you type is saved in the browser's localStorage as you go, keyed by a SHA-256 fingerprint of the file.

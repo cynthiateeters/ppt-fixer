@@ -287,7 +287,20 @@ export function loadDeck(bytes, limits = LIMITS) {
 }
 
 export const needsTitle = (slide) => !slide.title || slide.titleHidden;
-export const needsAlt = (pic) => !pic.decorative && !pic.alt.trim();
+// PowerPoint's automatic alt text ends with a marker line in the language Office was set to.
+// To support another language, add its marker here, copied exactly from a real deck,
+// and add its code to AUTO_ALT_LANGUAGES.
+export const AUTO_ALT_MARKERS = {
+  en: /\bDescription automatically generated(?: with (?:very high|high|medium|low) confidence)?\.?\s*$/i,
+};
+export const AUTO_ALT_LANGUAGES = ["en"];
+
+export const isAutoAlt = (text, languages = AUTO_ALT_LANGUAGES) =>
+  languages.some((lang) => AUTO_ALT_MARKERS[lang]?.test(text));
+
+// Alt text is missing when it's empty or is still PowerPoint's untouched guess.
+export const altMissing = (alt, decorative) => !decorative && (!alt.trim() || isAutoAlt(alt));
+export const needsAlt = (pic) => altMissing(pic.alt, pic.decorative);
 export const slideNeedsWork = (slide) => needsTitle(slide) || slide.pictures.some(needsAlt);
 
 export function summarize(deck) {

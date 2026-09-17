@@ -1,4 +1,13 @@
-import { loadDeck, applyEdits, needsTitle, needsAlt, mediaBytes, LIMITS } from "./pptx.js";
+import {
+  loadDeck,
+  applyEdits,
+  needsTitle,
+  needsAlt,
+  altMissing,
+  isAutoAlt,
+  mediaBytes,
+  LIMITS,
+} from "./pptx.js";
 import { previewUrl, clearPreviews } from "./preview.js";
 import {
   fingerprint,
@@ -57,7 +66,7 @@ function slideOpen(slide) {
   const titleOpen = needsTitle(slide) && !e.title.trim();
   const altOpen = slide.pictures.some((p, i) => {
     const pe = e.pictures[i];
-    return needsAlt(p) && !pe.decorative && !pe.alt.trim();
+    return needsAlt(p) && altMissing(pe.alt, pe.decorative);
   });
   return { titleOpen, altOpen, open: titleOpen || altOpen };
 }
@@ -90,7 +99,7 @@ function renderStatus() {
     return (
       n +
       s.pictures.filter(
-        (p, j) => needsAlt(p) && !e.pictures[j].decorative && !e.pictures[j].alt.trim(),
+        (p, j) => needsAlt(p) && altMissing(e.pictures[j].alt, e.pictures[j].decorative),
       ).length
     );
   }, 0);
@@ -222,11 +231,7 @@ function pictureCard(slide, pic, index) {
       frame.replaceChildren(img);
     } else
       frame.replaceChildren(
-        h(
-          "span",
-          { class: "loading" },
-          "No preview for this picture. Check it in PowerPoint.",
-        ),
+        h("span", { class: "loading" }, "No preview for this picture. Check it in PowerPoint."),
       );
   });
 
@@ -241,9 +246,12 @@ function pictureCard(slide, pic, index) {
       )
     : null;
 
+  const guessed = isAutoAlt(pic.alt);
+  const guessHintId = `${id}-guess`;
   const textarea = h("textarea", {
     id,
     rows: 3,
+    ...(guessed ? { "aria-describedby": guessHintId } : {}),
     disabled: e.decorative,
     oninput: (ev) => {
       e.alt = ev.target.value;
@@ -280,10 +288,21 @@ function pictureCard(slide, pic, index) {
         "h3",
         {},
         `Picture ${index + 1}`,
-        needsAlt(pic) ? h("span", { class: "flag" }, " needs alt text") : null,
+        guessed
+          ? h("span", { class: "flag" }, " PowerPoint guessed this")
+          : needsAlt(pic)
+            ? h("span", { class: "flag" }, " needs alt text")
+            : null,
       ),
       h("label", { for: id }, "Describe what this picture shows students"),
       textarea,
+      guessed
+        ? h(
+            "p",
+            { class: "hint", id: guessHintId },
+            'PowerPoint wrote this automatically. Check it against the picture and rewrite it. Removing the "Description automatically generated" line marks it as checked.',
+          )
+        : null,
       h("label", { class: "check" }, decorative, " Decorative, no description needed"),
       share,
     ),
