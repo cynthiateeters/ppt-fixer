@@ -97,12 +97,12 @@ function renderStatus() {
   const parts = [];
   parts.push(
     titles
-      ? `${titles} slide${titles === 1 ? "" : "s"} still need a title`
+      ? `${titles} slide${titles === 1 ? " still needs" : "s still need"} a title`
       : "Every slide has a title",
   );
   parts.push(
     pics
-      ? `${pics} picture${pics === 1 ? "" : "s"} still need alt text`
+      ? `${pics} picture${pics === 1 ? " still needs" : "s still need"} alt text`
       : "every picture has alt text or is marked decorative",
   );
   $("deck-status").textContent = `${slides.length} slides. ${parts.join(", ")}.`;
