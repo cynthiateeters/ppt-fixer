@@ -14,13 +14,15 @@ const DECORATIVE_URI = "{C183D7F6-B498-43B3-948B-1728B52AA6E4}";
 // a title there gets flagged for contrast by Ally, even behind the picture.
 export const IMAGE_SLIDE_COVERAGE = 0.5;
 
+const NAMED_ENTITIES = { lt: "<", gt: ">", quot: '"', apos: "'", amp: "&" };
+// One pass, so "&amp;#xA;" decodes to the text "&#xA;" rather than a line break.
+// PowerPoint writes line breaks in alt text as numeric entities like "&#xA;".
 const decodeXml = (s) =>
-  s
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, "&");
+  s.replace(/&(?:#x([0-9a-f]+)|#([0-9]+)|(lt|gt|quot|apos|amp));/gi, (m, hex, dec, name) => {
+    if (name) return NAMED_ENTITIES[name] ?? m;
+    const code = hex ? parseInt(hex, 16) : Number(dec);
+    return code <= 0x10ffff ? String.fromCodePoint(code) : m;
+  });
 // Characters XML 1.0 doesn't allow: most control characters, U+FFFE, U+FFFF and unpaired surrogates.
 // They mostly arrive by pasting from PDFs or web pages, and PowerPoint treats them as corruption.
 const esc = (code) => `\\u${code.toString(16).padStart(4, "0")}`;
@@ -34,7 +36,13 @@ export const cleanXmlText = (s) => s.replace(INVALID_XML_CHARS, "");
 
 const encodeText = (s) =>
   cleanXmlText(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const encodeAttr = (s) => encodeText(s).replace(/"/g, "&quot;");
+// Line breaks and tabs stay entities in attributes, or XML parsers turn them into spaces.
+const encodeAttr = (s) =>
+  encodeText(s)
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, "&#xA;")
+    .replace(/\r/g, "&#xD;")
+    .replace(/\t/g, "&#x9;");
 
 const attr = (tag, name) => {
   const m = tag.match(new RegExp(`\\s${name}=(?:"([^"]*)"|'([^']*)')`));

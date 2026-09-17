@@ -68,3 +68,20 @@ test("parts named like JavaScript built-ins are never mistaken for files", { ski
   );
   assert.doesNotThrow(() => applyEdits(deck, { slides: { 8: { title: "Still works" } } }));
 });
+
+test("decodes line break entities in alt text and keeps them on save", { skip }, () => {
+  const bytes = variant("ppt/slides/slide8.xml", (x) =>
+    x.replace(
+      'name="Picture 3"',
+      'name="Picture 3" descr="A picture containing text&#xA;&#xA;Description automatically generated &amp;#xA; &#233;"',
+    ),
+  );
+  const deck = loadDeck(bytes);
+  const alt = "A picture containing text\n\nDescription automatically generated &#xA; é";
+  assert.equal(deck.slides[7].pictures[0].alt, alt);
+  const edited = alt + "\ttab";
+  const out = applyEdits(deck, { slides: { 8: { pictures: { 0: { alt: edited, decorative: false } } } } });
+  const tag = strFromU8(unzipSync(out)["ppt/slides/slide8.xml"]).match(/<p:cNvPr id="4"[^>]*>/)[0];
+  assert.match(tag, /text&#xA;&#xA;Description/, tag);
+  assert.equal(loadDeck(out).slides[7].pictures[0].alt, edited);
+});
