@@ -78,6 +78,19 @@ This rule comes from sandbox tests in Ally on 2026-09-16, starting with one imag
 - In Ally's HTML and tagged PDF versions, those titles came through as headings and the alt text came through word for word.
 - A fixed deck opened in PowerPoint for Mac with no repair prompt (2026-09-17).
 
+## Accessibility of the page itself
+
+Checked 2026-09-22 in Chrome with a practice deck:
+
+- Lighthouse accessibility scores 100 on the start page and the editor.
+- At 320 pixels wide, the width of a 1280-pixel window at 400% zoom, the page reflows with no sideways scrolling.
+- All text is sized in rem and nothing is smaller than the browser's base size, so browser zoom and the browser's font size setting enlarge everything.
+- Every picture's fields sit in a group named for that picture, and the labels include its number, so a screen reader can tell pictures apart.
+- The "missing" and "needs alt text" flags disappear once fixed, and the status line only updates when its counts change.
+- Every visible control shows a focus outline.
+
+Not yet tried with a real screen reader.
+
 ## Not tested yet
 
 - **Decks from other departments.** It's only been run against decks from Arts and Design courses.

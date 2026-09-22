@@ -114,7 +114,9 @@ function renderStatus() {
       ? `${pics} picture${pics === 1 ? " still needs" : "s still need"} alt text`
       : "every picture has alt text or is marked decorative",
   );
-  $("deck-status").textContent = `${slides.length} slides. ${parts.join(", ")}.`;
+  // A live region: rewriting it with the same words on every keystroke makes some screen readers repeat it.
+  const text = `${slides.length} slides. ${parts.join(", ")}.`;
+  if ($("deck-status").textContent !== text) $("deck-status").textContent = text;
 }
 
 function renderList() {
@@ -196,6 +198,11 @@ function titleSection(slide) {
       "This slide is mostly picture, so the title goes just above the slide where it won't show when you present. Screen readers and Ally still find it, so give it real words.";
   else hint = "The title will appear on the slide in the layout's usual title spot.";
 
+  const flag = needsTitle(slide) ? h("span", { class: "flag" }, " missing") : null;
+  const updateFlag = () => {
+    if (flag) flag.hidden = !!e.title.trim();
+  };
+  updateFlag();
   const input = h("input", {
     type: "text",
     id,
@@ -203,13 +210,14 @@ function titleSection(slide) {
     "aria-describedby": hintId,
     oninput: (ev) => {
       e.title = ev.target.value;
+      updateFlag();
       changed();
     },
   });
   return h(
     "section",
     { class: "field-group" },
-    h("h3", {}, "Slide title", needsTitle(slide) ? h("span", { class: "flag" }, " missing") : null),
+    h("h3", {}, "Slide title", flag),
     h("label", { for: id, class: "visually-hidden" }, `Title for slide ${slide.number}`),
     input,
     h("p", { class: "hint", id: hintId }, hint),
@@ -248,6 +256,16 @@ function pictureCard(slide, pic, index) {
 
   const guessed = isAutoAlt(pic.alt);
   const guessHintId = `${id}-guess`;
+  const flag = guessed
+    ? h("span", { class: "flag" }, " PowerPoint guessed this")
+    : needsAlt(pic)
+      ? h("span", { class: "flag" }, " needs alt text")
+      : null;
+  // The flag is part of the picture's name for screen readers, so it goes once the problem is fixed.
+  const updateFlag = () => {
+    if (flag) flag.hidden = !altMissing(e.alt, e.decorative);
+  };
+  updateFlag();
   const textarea = h("textarea", {
     id,
     rows: 3,
@@ -262,6 +280,7 @@ function pictureCard(slide, pic, index) {
           if (!other.touched) other.alt = e.alt;
         }
       }
+      updateFlag();
       changed();
     },
   });
@@ -273,28 +292,22 @@ function pictureCard(slide, pic, index) {
     onchange: (ev) => {
       e.decorative = ev.target.checked;
       textarea.disabled = e.decorative;
+      updateFlag();
       changed();
     },
   });
 
+  const headingId = `${id}-heading`;
+  // Named by its heading, so a screen reader says which picture the fields belong to.
   return h(
     "section",
-    { class: "picture" },
+    { class: "picture", role: "group", "aria-labelledby": headingId },
     frame,
     h(
       "div",
       { class: "picture-fields" },
-      h(
-        "h3",
-        {},
-        `Picture ${index + 1}`,
-        guessed
-          ? h("span", { class: "flag" }, " PowerPoint guessed this")
-          : needsAlt(pic)
-            ? h("span", { class: "flag" }, " needs alt text")
-            : null,
-      ),
-      h("label", { for: id }, "Describe what this picture shows students"),
+      h("h4", { id: headingId }, `Picture ${index + 1}`, flag),
+      h("label", { for: id }, `Describe what picture ${index + 1} shows students`),
       textarea,
       guessed
         ? h(
@@ -303,7 +316,12 @@ function pictureCard(slide, pic, index) {
             'PowerPoint wrote this automatically. Check it against the picture and rewrite it. Removing the "Description automatically generated" line marks it as checked.',
           )
         : null,
-      h("label", { class: "check" }, decorative, " Decorative, no description needed"),
+      h(
+        "label",
+        { class: "check" },
+        decorative,
+        ` Picture ${index + 1} is decorative, no description needed`,
+      ),
       share,
     ),
   );
