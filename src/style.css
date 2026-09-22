@@ -376,9 +376,12 @@ textarea {
   color: var(--ink);
 }
 
+/* Off should look off: a near-white box reads as one waiting for typing. */
 textarea:disabled {
-  background: var(--ground);
+  border-style: dashed;
+  background: hsl(220, 10%, 92%);
   color: var(--ink-soft);
+  cursor: not-allowed;
 }
 
 .hint {

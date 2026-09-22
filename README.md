@@ -88,6 +88,7 @@ Checked 2026-09-22 in Chrome with a practice deck:
 - Every picture's fields sit in a group named for that picture, and the labels include its number, so a screen reader can tell pictures apart.
 - The "missing" and "needs alt text" flags disappear once fixed, and the status line only updates when its counts change.
 - Every visible control shows a focus outline.
+- A description box that's switched off, because its picture is marked decorative, looks switched off and says why right beneath it.
 
 Not yet tried with a real screen reader.
 

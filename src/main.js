@@ -286,12 +286,20 @@ function pictureCard(slide, pic, index) {
   });
   textarea.value = e.alt;
 
+  // A box that can't be typed in always says why, right beside it.
+  const decorativeNote = h(
+    "p",
+    { class: "hint", hidden: !e.decorative },
+    "Marked decorative, so no description is needed. Uncheck it below to write one.",
+  );
+
   const decorative = h("input", {
     type: "checkbox",
     checked: e.decorative,
     onchange: (ev) => {
       e.decorative = ev.target.checked;
       textarea.disabled = e.decorative;
+      decorativeNote.hidden = !e.decorative;
       updateFlag();
       changed();
     },
@@ -309,6 +317,7 @@ function pictureCard(slide, pic, index) {
       h("h4", { id: headingId }, `Picture ${index + 1}`, flag),
       h("label", { for: id }, `Describe what picture ${index + 1} shows students`),
       textarea,
+      decorativeNote,
       guessed
         ? h(
             "p",
