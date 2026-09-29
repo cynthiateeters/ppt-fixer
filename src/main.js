@@ -124,11 +124,29 @@ function renderList() {
   list.replaceChildren();
   const slides = visibleSlides();
   if (!slides.length) {
-    list.append(h("li", { class: "empty" }, "No slides need work. You can still download a copy."));
+    list.append(
+      h(
+        "li",
+        { class: "empty" },
+        "No slides are missing a title or alt text. You can still download a copy.",
+      ),
+    );
     return;
   }
   for (const s of slides) {
-    const { open } = slideOpen(s);
+    const { open, titleOpen, altOpen } = slideOpen(s);
+    // Say what's missing, not a verdict: this page only checks titles and alt text,
+    // so a slide with nothing missing can still fail contrast or have a useless description.
+    const stateText =
+      titleOpen && altOpen
+        ? "Needs title and alt text"
+        : titleOpen
+          ? "Needs title"
+          : altOpen
+            ? "Needs alt text"
+            : slideNeededWork(s)
+              ? "Filled in"
+              : "Nothing missing";
     const label = editFor(s).title.trim() || "Untitled";
     list.append(
       h(
@@ -138,13 +156,13 @@ function renderList() {
           "button",
           {
             type: "button",
-            class: `slide-link${s.number - 1 === state.current ? " current" : ""}${open ? " open" : " done"}`,
+            class: `slide-link${s.number - 1 === state.current ? " current" : ""}${open ? " open" : slideNeededWork(s) ? " done" : " untouched"}`,
             "aria-current": s.number - 1 === state.current ? "true" : null,
             onclick: () => goTo(s.number - 1),
           },
           h("span", { class: "num" }, String(s.number)),
           h("span", { class: "label" }, label),
-          h("span", { class: "state" }, open ? "Needs work" : slideNeededWork(s) ? "Done" : "OK"),
+          h("span", { class: "state" }, stateText),
         ),
       ),
     );

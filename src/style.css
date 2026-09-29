@@ -262,8 +262,8 @@ button.quiet {
 
 .slide-link {
   display: grid;
-  grid-template-columns: 2.25rem 1fr auto;
-  gap: 0.5rem;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0 0.5rem;
   align-items: center;
   width: 100%;
   margin-bottom: 0.25rem;
@@ -288,9 +288,15 @@ button.quiet {
   overflow-wrap: anywhere;
 }
 
+/* Under the title, so a status like "Needs title and alt text" never squeezes it. */
 .slide-link .state {
+  grid-column: 2;
   font-size: 1rem;
   font-weight: 600;
+}
+
+.scope {
+  margin: 0 0 0.75rem;
 }
 
 .slide-link.open .state {
@@ -299,6 +305,12 @@ button.quiet {
 
 .slide-link.done .state {
   color: var(--ok);
+}
+
+/* Neutral, not green: nothing missing isn't the same as accessible. */
+.slide-link.untouched .state {
+  color: var(--ink-soft);
+  font-weight: 400;
 }
 
 .doc-props {
