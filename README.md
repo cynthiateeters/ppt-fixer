@@ -2,7 +2,7 @@
 
 A proof of concept: a web page that fixes two problems Ally flags in image-heavy PowerPoint decks, missing slide titles and missing alt text.
 
-You open a .pptx, the page walks you through the deck a slide at a time, you type titles and picture descriptions where they're missing, and it gives you a fixed copy to upload to Canvas. The file never leaves your computer.
+You open a .pptx, the page shows every slide on one scrolling page, you type titles and picture descriptions where they're missing, and it gives you a fixed copy to upload to Canvas. The file never leaves your computer.
 
 ## Beginner's guide
 
@@ -10,7 +10,8 @@ You open a .pptx, the page walks you through the deck a slide at a time, you typ
 
 - **Slide titles.** Every untitled slide gets a box to type a title. On slides where a picture covers the slide or overlaps the title area, the title is placed just above the slide. It doesn't show when presenting, but screen readers and Ally still find it.
 - **Alt text.** Every picture gets a preview and a text box. You can mark a picture as decorative instead. When the same picture appears on several slides, one description can fill them all.
-- **Every slide, in order.** The list shows the whole deck, and it opens on the first slide that needs work. Each slide says what it's missing ("Needs title", "Needs alt text"), "Filled in" once you've added it, or "Nothing missing". It never says a slide is fine, because the page checks titles and alt text only, and it says so above the list. "Only slides missing a title or alt text" hides the rest. It's off by default, because a slide that needs a description often depends on the ones around it, such as a section slide or a caption.
+- **Every slide on one page.** Each slide has its own section with its text, title box and picture boxes, one after another. There's no Next button. The list beside it jumps to a slide and highlights the one at the top of the screen. Typing never rebuilds the page, so the boxes stay where they are. That matters for a browser assistant like Gemini in Chrome filling in the whole deck, which got stuck on the Next button when the page showed one slide at a time. Each click replaced the whole slide and moved the button, sometimes below the bottom of the screen.
+- **Slide status.** Each slide in the list says what it's missing ("Needs title", "Needs alt text"), "Filled in" once you've added it, or "Nothing missing". It never says a slide is fine, because the page checks titles and alt text only, and it says so above the list. "Only slides missing a title or alt text" hides the rest. It's off by default, because a slide that needs a description often depends on the ones around it, such as a section slide or a caption.
 - **PowerPoint's guesses.** Older PowerPoint saved automatic alt text ending in "Description automatically generated". The page treats that as missing and flags it "PowerPoint guessed this" until you rewrite it or remove that line. Text you don't touch is saved unchanged. Only English is recognized for now. Other languages can be added in `AUTO_ALT_MARKERS` in `src/pptx.js`, using the exact line from a real deck.
 - **File properties.** The document title can be corrected. Ally copies it into the PDF and HTML versions students download.
 - **Download.** The fixed copy is saved as `<name> (fixed).pptx`. The original isn't changed.
@@ -90,6 +91,11 @@ Checked 2026-09-22 in Chrome with a practice deck:
 - Every visible control shows a focus outline.
 - A description box that's switched off, because its picture is marked decorative, looks switched off and says why right beneath it.
 
+Rechecked 2026-09-29 after the move to one page, with the same practice deck:
+
+- Lighthouse accessibility still scores 100 on the editor.
+- At 320 pixels wide there's still no sideways scrolling. This needed a fix: a URL in one slide's text has no spaces to wrap at, and it widened every slide. Slide text now wraps anywhere.
+
 Not yet tried with a real screen reader.
 
 ## Not tested yet
@@ -99,7 +105,7 @@ Not yet tried with a real screen reader.
 ## How it works
 
 - `src/pptx.js` reads the deck with [fflate](https://github.com/101arrowz/fflate), finds titles and pictures in each slide's XML, and writes the edits back. It has no DOM code, so the same module runs in the tests.
-- `src/preview.js` shows pictures. It checks each file's first bytes, because PowerPoint's file extensions can't be trusted. PNG, JPEG and GIF display natively.
+- `src/preview.js` shows pictures. It checks each file's first bytes, because PowerPoint's file extensions can't be trusted. PNG, JPEG and GIF display natively. Previews are decoded only as they scroll near the screen, so a long deck doesn't decode every picture when it opens.
 - `src/tiff-worker.js` decodes TIFF previews with [image-in-browser](https://github.com/yegor-pelykh/image-in-browser) in a worker, so the page doesn't freeze. It only loads when a deck has TIFFs.
 - `src/saved-work.js` saves and restores typed edits in localStorage. Every storage call is guarded, because storage can be blocked or full.
 - `src/main.js` is the interface, built with plain DOM calls.

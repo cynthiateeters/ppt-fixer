@@ -40,7 +40,7 @@ const state = {
   deck: null,
   fileName: "",
   edits: null,
-  current: 0,
+  current: 0, // the slide at the top of the screen, highlighted in the list
   onlyNeedsWork: true,
   id: null, // fingerprint of the open file
   dirty: false, // typed something since opening or restoring
@@ -87,6 +87,10 @@ function visibleSlides() {
   const all = state.deck.slides;
   return state.onlyNeedsWork ? all.filter(slideNeededWork) : all;
 }
+
+// Every picture's box, so a description shared across slides shows up in boxes already on the page.
+const pictureViews = new Map();
+const viewKey = (slideNumber, index) => `${slideNumber}-${index}`;
 
 // ---------- rendering ----------
 
@@ -153,12 +157,16 @@ function renderList() {
         "li",
         {},
         h(
-          "button",
+          "a",
           {
-            type: "button",
+            href: `#slide-${s.number}`,
             class: `slide-link${s.number - 1 === state.current ? " current" : ""}${open ? " open" : slideNeededWork(s) ? " done" : " untouched"}`,
-            "aria-current": s.number - 1 === state.current ? "true" : null,
-            onclick: () => goTo(s.number - 1),
+            "data-index": String(s.number - 1),
+            "aria-current": s.number - 1 === state.current ? "location" : null,
+            onclick: (ev) => {
+              ev.preventDefault();
+              goTo(s.number - 1);
+            },
           },
           h("span", { class: "num" }, String(s.number)),
           h("span", { class: "label" }, label),
@@ -251,15 +259,19 @@ function pictureCard(slide, pic, index) {
     { class: "thumb-frame" },
     h("span", { class: "loading" }, "Loading preview..."),
   );
-  previewUrl(pic.mediaPath, mediaBytes(state.deck, pic.mediaPath)).then((url) => {
-    if (url) {
-      img.src = url;
-      frame.replaceChildren(img);
-    } else
-      frame.replaceChildren(
-        h("span", { class: "loading" }, "No preview for this picture. Check it in PowerPoint."),
-      );
-  });
+  const deck = state.deck;
+  whenNearScreen(frame, () =>
+    previewUrl(pic.mediaPath, mediaBytes(deck, pic.mediaPath)).then((url) => {
+      if (state.deck !== deck) return; // a different file was opened while this decoded
+      if (url) {
+        img.src = url;
+        frame.replaceChildren(img);
+      } else
+        frame.replaceChildren(
+          h("span", { class: "loading" }, "No preview for this picture. Check it in PowerPoint."),
+        );
+    }),
+  );
 
   const uses = pic.mediaPath ? otherUses(pic.mediaPath, { slide: slide.number, index }) : [];
   const shareId = `${id}-share`;
@@ -295,7 +307,10 @@ function pictureCard(slide, pic, index) {
       if (share && share.querySelector("input").checked) {
         for (const u of uses) {
           const other = state.edits.slides[u.slide.number - 1].pictures[u.index];
-          if (!other.touched) other.alt = e.alt;
+          if (!other.touched) {
+            other.alt = e.alt;
+            pictureViews.get(viewKey(u.slide.number, u.index))?.();
+          }
         }
       }
       updateFlag();
@@ -303,6 +318,10 @@ function pictureCard(slide, pic, index) {
     },
   });
   textarea.value = e.alt;
+  pictureViews.set(viewKey(slide.number, index), () => {
+    textarea.value = e.alt;
+    updateFlag();
+  });
 
   // A box that can't be typed in always says why, right beside it.
   const decorativeNote = h(
@@ -354,13 +373,34 @@ function pictureCard(slide, pic, index) {
   );
 }
 
-function renderSlide() {
-  const slides = state.deck.slides;
-  const slide = slides[state.current];
-  const article = $("slide");
-  const pos = visibleSlides().indexOf(slide);
-  const seq = visibleSlides();
+// Decode previews only as they come near the screen, so a long deck doesn't decode every picture at once.
+let previewObserver = null;
+const previewJobs = new WeakMap();
 
+function whenNearScreen(el, job) {
+  if (!("IntersectionObserver" in window)) return job();
+  previewObserver ??= new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        previewObserver.unobserve(entry.target);
+        previewJobs.get(entry.target)?.();
+      }
+    },
+    { rootMargin: "800px 0px" },
+  );
+  previewJobs.set(el, job);
+  previewObserver.observe(el);
+}
+
+// Forget boxes that are about to be replaced, so their previews aren't decoded for nothing.
+function stopPreviews() {
+  previewObserver?.disconnect();
+  previewObserver = null;
+}
+
+function slideSection(slide) {
+  const slides = state.deck.slides;
   const context = h(
     "section",
     { class: "context" },
@@ -395,24 +435,9 @@ function renderSlide() {
       ),
     );
 
-  const prev = h(
-    "button",
-    { type: "button", disabled: pos <= 0, onclick: () => goTo(seq[pos - 1].number - 1) },
-    "Previous",
-  );
-  const next = h(
-    "button",
-    {
-      type: "button",
-      class: "primary",
-      disabled: pos < 0 || pos >= seq.length - 1,
-      onclick: () => goTo(seq[pos + 1].number - 1),
-    },
-    "Next slide",
-  );
-
+  const headingId = `slide-${slide.number}-heading`;
   const parts = [
-    h("h2", {}, `Slide ${slide.number} of ${slides.length}`),
+    h("h2", { id: headingId }, `Slide ${slide.number} of ${slides.length}`),
     context,
     titleSection(slide),
     slide.pictures.length
@@ -420,17 +445,68 @@ function renderSlide() {
       : null,
     slide.pictures.map((p, i) => pictureCard(slide, p, i)),
     extras,
-    h("div", { class: "pager" }, prev, next),
   ];
-  article.replaceChildren(...parts.flat().filter(Boolean));
+  return h(
+    "section",
+    {
+      class: "slide",
+      id: `slide-${slide.number}`,
+      tabindex: "-1",
+      "aria-labelledby": headingId,
+    },
+    ...parts.flat().filter(Boolean),
+  );
+}
+
+// Every slide is on the page at once and is built only when a file opens or starts over.
+// Typing never rebuilds a slide, so the boxes stay put for a person or an assistant filling them in.
+function renderSlides() {
+  pictureViews.clear();
+  $("slides").replaceChildren(...state.deck.slides.map(slideSection));
+  applyFilter();
+}
+
+function applyFilter() {
+  const shown = new Set(visibleSlides());
+  for (const s of state.deck.slides) $(`slide-${s.number}`).hidden = !shown.has(s);
 }
 
 function goTo(index) {
-  state.current = index;
-  renderList();
-  renderSlide();
-  $("slide").focus();
+  const section = $(`slide-${index + 1}`);
+  section.scrollIntoView({ block: "start" });
+  section.focus({ preventScroll: true });
+  setCurrent(index);
 }
+
+function setCurrent(index) {
+  if (state.current === index) return;
+  state.current = index;
+  for (const link of $("slide-list").querySelectorAll(".slide-link")) {
+    const here = Number(link.dataset.index) === index;
+    link.classList.toggle("current", here);
+    if (here) link.setAttribute("aria-current", "location");
+    else link.removeAttribute("aria-current");
+  }
+}
+
+// Highlight the slide at the top of the screen as the page scrolls.
+let scrollQueued = false;
+window.addEventListener(
+  "scroll",
+  () => {
+    if (!state.deck || scrollQueued) return;
+    scrollQueued = true;
+    requestAnimationFrame(() => {
+      scrollQueued = false;
+      if (!state.deck) return;
+      const top = visibleSlides().find(
+        (s) => $(`slide-${s.number}`).getBoundingClientRect().bottom > 120,
+      );
+      if (top) setCurrent(top.number - 1);
+    });
+  },
+  { passive: true },
+);
 
 // ---------- file handling ----------
 
@@ -467,8 +543,7 @@ async function openFile(file) {
           : "Your typing is saved in this browser as you go."
         : "This browser isn't saving your work. Download before closing this tab.",
     );
-    const first = deck.slides.find(slideNeededWork) ?? deck.slides[0];
-    state.current = first ? first.number - 1 : 0;
+    state.current = 0;
     // Off by default: seeing every slide keeps the surrounding context, which
     // the slides that need work often depend on (a section slide, a caption).
     state.onlyNeedsWork = false;
@@ -477,8 +552,9 @@ async function openFile(file) {
     $("doc-title").value = state.edits.docTitle;
     $("start").hidden = true;
     $("editor").hidden = false;
+    stopPreviews();
     refresh();
-    renderSlide();
+    renderSlides();
     $("deck-name").focus();
   } catch (e) {
     error.textContent = `Couldn't open that file. ${e.message}`;
@@ -538,7 +614,7 @@ drop.addEventListener("drop", (e) => {
 $("only-needs-work").addEventListener("change", (e) => {
   state.onlyNeedsWork = e.target.checked;
   renderList();
-  renderSlide();
+  applyFilter();
 });
 $("doc-title").addEventListener("input", (e) => {
   state.edits.docTitle = e.target.value;
@@ -549,7 +625,10 @@ $("close-deck").addEventListener("click", () => {
   if (state.saving && state.dirty) saveNow(state.id, state.fileName, state.edits);
   cancelPendingSave();
   state.deck = null;
+  stopPreviews();
   clearPreviews();
+  $("slides").replaceChildren();
+  pictureViews.clear();
   $("file").value = "";
   $("editor").hidden = true;
   $("start").hidden = false;
@@ -563,8 +642,9 @@ $("start-over").addEventListener("click", () => {
   $("doc-title").value = state.edits.docTitle;
   $("restored").hidden = true;
   setSaveStatus(state.saving ? "Your typing is saved in this browser as you go." : "");
+  stopPreviews();
   refresh();
-  renderSlide();
+  renderSlides();
 });
 
 // For a computer login other people also use: remove this file's saved work and stop saving for now.

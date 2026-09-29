@@ -322,7 +322,30 @@ button.quiet {
   width: 100%;
 }
 
+.slides {
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* The list is a set of links now, styled like the buttons it replaced. */
+a.slide-link {
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+}
+
+a.slide-link:hover {
+  border-color: var(--accent);
+}
+
+a.slide-link:hover .label {
+  text-decoration: underline;
+}
+
 .slide {
+  min-width: 0;
+  scroll-margin-top: 1rem;
   padding: 1.5rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -353,6 +376,12 @@ button.quiet {
 .context ul {
   margin: 0;
   padding-left: 1.25rem;
+}
+
+/* A pasted URL has no spaces to wrap at, and one wide slide would widen every slide in the column. */
+.context li,
+.context p {
+  overflow-wrap: anywhere;
 }
 
 .field-group,
@@ -463,14 +492,6 @@ textarea:disabled {
   padding: 0.75rem 1rem;
   border-radius: var(--radius);
   background: var(--warn-soft);
-}
-
-.pager {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
 }
 
 .save-status {
