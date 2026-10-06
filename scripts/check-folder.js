@@ -15,7 +15,8 @@ if (outDir) mkdirSync(outDir, { recursive: true });
 
 let failures = 0;
 for (const name of readdirSync(dir)
-  .filter((n) => n.endsWith(".pptx"))
+  // "~$" files are PowerPoint's lock files for a deck that's open, not decks.
+  .filter((n) => n.endsWith(".pptx") && !n.startsWith("~$"))
   .sort()) {
   try {
     const deck = loadDeck(new Uint8Array(readFileSync(join(dir, name))));

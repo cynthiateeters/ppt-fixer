@@ -1,6 +1,6 @@
 # ppt-fixer
 
-A proof of concept: a web page that fixes two problems Ally flags in image-heavy PowerPoint decks, missing slide titles and missing alt text.
+A web page that fixes two problems Ally flags in image-heavy PowerPoint decks, missing slide titles and missing alt text.
 
 You open a .pptx, the page shows every slide on one scrolling page, you type titles and picture descriptions where they're missing, and it gives you a fixed copy to upload to Canvas. The file never leaves your computer.
 
@@ -22,7 +22,7 @@ You open a .pptx, the page shows every slide on one scrolling page, you type tit
   - If other people use the same computer login, "Delete saved work for this file" removes it and stops saving until the file is reopened.
   - If the browser blocks storage, the page says so and warns before the tab closes.
 - **Safe text.** Characters XML doesn't allow, which usually arrive by pasting from a PDF, are removed before they're written, so they can't corrupt the file.
-- **Help.** The header's Help link walks through fixing a file, writing titles and alt text, drafting them with a browser AI assistant (with a copyable example prompt for art slides), what the slide list labels mean, and common problems. Help is a section of `index.html`, shown in place of the fixer, so an open deck stays open while it's read. The browser's Back button and "Back to the fixer" both return to the same spot. When a label, limit or message in `src/main.js` changes, update the help text too.
+- **Help.** The Help button in the header walks through fixing a file, writing titles and alt text, drafting them with a browser AI assistant (with a copyable example prompt for art slides), what the slide list labels mean, and common problems. Help is a section of `index.html`, shown in place of the fixer, so an open deck stays open while it's read. The browser's Back button and "Back to the fixer" both return to the same spot. When a label, limit or message in `src/main.js` changes, update the help text too.
 - **Size limits.** Files over 250 MB, files that unpack to more than 500 MB, and files with more than 20,000 parts are refused with a plain message, so a broken or crafted file can't freeze the tab. TIFF previews over 50 million pixels are skipped.
 
 ### What it doesn't do
@@ -69,6 +69,12 @@ To check a whole folder of decks, filling every gap with test text and confirmin
 node scripts/check-folder.js <folder-of-pptx-files>
 ```
 
+Add a second folder to keep the filled-in copies, for example to open them in PowerPoint:
+
+```bash
+node scripts/check-folder.js <folder-of-pptx-files> <output-folder>
+```
+
 ## Why titles go above the slide
 
 This rule comes from sandbox tests in Ally on 2026-09-16, starting with one image-heavy 25-slide deck:
@@ -97,6 +103,12 @@ Rechecked 2026-09-29 after the move to one page, with the same practice deck:
 - Lighthouse accessibility still scores 100 on the editor.
 - At 320 pixels wide there's still no sideways scrolling. This needed a fix: a URL in one slide's text has no spaces to wrap at, and it widened every slide. Slide text now wraps anywhere.
 
+Rechecked 2026-10-06 after adding help, with the same practice deck:
+
+- Lighthouse accessibility scores 100 with help open.
+- At 320 pixels wide, help has no sideways scrolling, and the Help button wraps under the page name.
+- Opening help and returning keeps typed text and the scroll position, and focus returns to the file name.
+
 Not yet tried with a real screen reader.
 
 ## Not tested yet
@@ -106,7 +118,7 @@ Not yet tried with a real screen reader.
 ## How it works
 
 - `src/pptx.js` reads the deck with [fflate](https://github.com/101arrowz/fflate), finds titles and pictures in each slide's XML, and writes the edits back. It has no DOM code, so the same module runs in the tests.
-- `src/preview.js` shows pictures. It checks each file's first bytes, because PowerPoint's file extensions can't be trusted. PNG, JPEG and GIF display natively. Previews are decoded only as they scroll near the screen, so a long deck doesn't decode every picture when it opens.
+- `src/preview.js` shows pictures. It checks each file's first bytes, because PowerPoint's file extensions can't be trusted. PNG, JPEG, GIF, BMP and WebP display natively. Other formats, such as SVG, get no preview. Previews are decoded only as they scroll near the screen, so a long deck doesn't decode every picture when it opens.
 - `src/tiff-worker.js` decodes TIFF previews with [image-in-browser](https://github.com/yegor-pelykh/image-in-browser) in a worker, so the page doesn't freeze. It only loads when a deck has TIFFs.
 - `src/saved-work.js` saves and restores typed edits in localStorage. Every storage call is guarded, because storage can be blocked or full.
 - `src/main.js` is the interface, built with plain DOM calls.
@@ -114,7 +126,7 @@ Dependencies are pinned to exact versions.
 
 ## Contributing
 
-This is a proof of concept for the Arts and Design digital accessibility work. Issues and suggestions are welcome. Before opening a pull request:
+This tool is part of the Arts and Design digital accessibility work. Issues and suggestions are welcome. Before opening a pull request:
 
 1. Run `pnpm test` with a sample deck.
 2. Run `node scripts/check-folder.js` on a folder of real decks.

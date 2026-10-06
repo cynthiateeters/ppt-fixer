@@ -5,6 +5,7 @@ import {
   needsAlt,
   altMissing,
   isAutoAlt,
+  slideNeedsWork,
   mediaBytes,
   LIMITS,
 } from "./pptx.js";
@@ -41,7 +42,7 @@ const state = {
   fileName: "",
   edits: null,
   current: 0, // the slide at the top of the screen, highlighted in the list
-  onlyNeedsWork: true,
+  onlyNeedsWork: false, // off by default; openFile resets it for each deck
   id: null, // fingerprint of the open file
   dirty: false, // typed something since opening or restoring
   saving: true, // false after "Delete saved work" or when storage is blocked
@@ -53,7 +54,7 @@ function freshEdits(deck) {
   return {
     docTitle: deck.docTitle,
     slides: deck.slides.map((s) => ({
-      title: s.titleHidden ? s.title : s.title,
+      title: s.title,
       pictures: s.pictures.map((p) => ({ alt: p.alt, decorative: p.decorative, touched: false })),
     })),
   };
@@ -71,7 +72,8 @@ function slideOpen(slide) {
   return { titleOpen, altOpen, open: titleOpen || altOpen };
 }
 
-const slideNeededWork = (slide) => needsTitle(slide) || slide.pictures.some(needsAlt);
+// Whether the slide was missing something when the file opened, before any typing.
+const slideNeededWork = slideNeedsWork;
 
 function otherUses(mediaPath, except) {
   const uses = [];
@@ -431,7 +433,7 @@ function slideSection(slide) {
       h(
         "p",
         { class: "note" },
-        "This slide also has charts, tables or picture-filled shapes this page can't edit. Check them in PowerPoint's Accessibility Assistant.",
+        "This slide also has charts, tables or picture-filled shapes this page can't edit. Check them with PowerPoint's Check Accessibility.",
       ),
     );
 
