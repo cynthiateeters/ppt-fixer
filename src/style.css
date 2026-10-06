@@ -61,6 +61,11 @@ input[type="checkbox"] {
 }
 
 .site-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem 1rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--line);
   background: var(--panel);
@@ -69,6 +74,35 @@ input[type="checkbox"] {
 .site-name {
   margin: 0;
   font-weight: 600;
+}
+
+a {
+  color: var(--accent);
+}
+
+.site-home {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-home:hover {
+  text-decoration: underline;
+}
+
+/* Outlined, not filled, so it doesn't compete with "Download fixed copy". */
+.header-link {
+  padding: 0.4rem 1.25rem;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.header-link:hover {
+  background: var(--accent-soft);
+  text-decoration: underline;
 }
 
 .badge {
@@ -519,4 +553,90 @@ textarea:disabled {
 .doc-props button {
   margin-top: 0.5rem;
   font-size: 1rem;
+}
+
+/* ---------- help ---------- */
+
+.help {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.help h2 {
+  margin-top: 2.5rem;
+}
+
+.help h3 {
+  margin-top: 1.5rem;
+  font-size: 1.125rem;
+}
+
+.help section {
+  scroll-margin-top: 1rem;
+}
+
+/* Focused by script after a jump, so a screen reader starts there; not something a person tabs to. */
+.help section:focus,
+.help h1:focus,
+.start h1:focus {
+  outline: none;
+}
+
+.help-toc {
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.help-toc h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+}
+
+.help-toc ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.help-steps li,
+.help li {
+  margin-bottom: 0.5rem;
+}
+
+.help-terms dt {
+  margin-top: 1rem;
+  font-weight: 600;
+}
+
+.help-terms dd {
+  margin: 0.25rem 0 0;
+}
+
+.help-back {
+  margin-top: 3rem;
+}
+
+.prompt {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.prompt summary {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.prompt button {
+  margin: 0.75rem 0.75rem 0 0;
+}
+
+/* Wraps like prose, so a long rule never forces sideways scrolling at high zoom. */
+.prompt pre {
+  margin: 0.75rem 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: 1rem/1.5 ui-monospace, "SF Mono", Menlo, monospace;
 }

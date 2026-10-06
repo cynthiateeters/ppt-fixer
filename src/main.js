@@ -662,4 +662,66 @@ window.addEventListener("beforeunload", (e) => {
   e.returnValue = "";
 });
 
+// ---------- help ----------
+
+// Help is part of this page, not a separate one, so an open deck stays open while it's read.
+// "#help" or any section inside help shows it; any other address shows the fixer.
+// The browser's Back button returns to the fixer at the spot it was left.
+let fixerScroll = 0;
+let cameFromFixer = false; // true when the Help link added a history entry that "Back to the fixer" can undo
+
+function showView(ev) {
+  const target = location.hash.length > 1 ? document.getElementById(location.hash.slice(1)) : null;
+  const help = $("help");
+  const inHelp = !!target && help.contains(target);
+  if (inHelp === !help.hidden) return; // a jump within help: the browser scrolls to it
+  if (inHelp) {
+    fixerScroll = window.scrollY;
+    cameFromFixer = !!ev; // false when the page was opened straight at #help
+    $("start").hidden = true;
+    $("editor").hidden = true;
+    help.hidden = false;
+    if (target === help) {
+      window.scrollTo(0, 0);
+      help.querySelector("h1").focus({ preventScroll: true });
+    } else target.scrollIntoView();
+  } else {
+    help.hidden = true;
+    $("start").hidden = !!state.deck;
+    $("editor").hidden = !state.deck;
+    window.scrollTo(0, fixerScroll);
+    (state.deck ? $("deck-name") : $("start").querySelector("h1")).focus({ preventScroll: true });
+  }
+}
+
+// Going back through history, rather than adding an entry, keeps Back from returning to help afterward.
+for (const link of document.querySelectorAll(".back-link"))
+  link.addEventListener("click", (ev) => {
+    ev.preventDefault();
+    if (cameFromFixer) history.back();
+    else location.hash = "";
+  });
+
+// Contents links jump within help without adding history entries, so one Back always leaves help.
+for (const link of $("help").querySelectorAll('a[href^="#"]:not(.back-link)'))
+  link.addEventListener("click", (ev) => {
+    const target = document.getElementById(link.hash.slice(1));
+    if (!target) return;
+    ev.preventDefault();
+    target.scrollIntoView();
+    target.focus({ preventScroll: true });
+  });
+
+$("copy-prompt").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText($("art-prompt").textContent);
+    $("copy-status").textContent = "Copied. Paste it into the assistant.";
+  } catch {
+    $("copy-status").textContent = "Couldn't copy. Select the prompt below and copy it instead.";
+  }
+});
+
+window.addEventListener("hashchange", showView);
+showView();
+
 pruneOld();

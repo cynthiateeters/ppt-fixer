@@ -12,11 +12,12 @@
   <body>
     <header class="site-header">
       <p class="site-name">Slide title and alt text fixer <span class="badge">proof of concept</span></p>
+      <a href="#help" class="header-link">Help</a>
     </header>
 
     <main id="app">
       <section id="start" class="start">
-        <h1>Fix slide titles and alt text in a PowerPoint file</h1>
+        <h1 tabindex="-1">Fix slide titles and alt text in a PowerPoint file</h1>
         <p>
           Open a .pptx file and this page lists every slide on one page, flagging the ones missing a title or a
           picture description. Type them in, then download a fixed copy to upload to Canvas.
@@ -38,7 +39,7 @@
       <section id="editor" class="editor" hidden>
         <div class="deck-bar">
           <div>
-            <h1 id="deck-name" class="deck-name"></h1>
+            <h1 id="deck-name" class="deck-name" tabindex="-1"></h1>
             <p id="deck-status" class="deck-status" aria-live="polite"></p>
             <p id="save-status" class="save-status"></p>
           </div>
@@ -79,6 +80,247 @@
 
           <div id="slides" class="slides"></div>
         </div>
+      </section>
+      <section id="help" class="help" hidden>
+        <p class="help-back"><a href="#" class="back-link">Back to the fixer</a></p>
+        <h1 tabindex="-1">How to use the fixer</h1>
+        <p>
+          The fixer handles two things Ally flags in PowerPoint files: slides with no title, and pictures with no
+          description (alt text). You open a .pptx file, type what's missing, and download a fixed copy to upload to
+          Canvas. Your file never leaves your computer.
+        </p>
+
+        <nav class="help-toc" aria-labelledby="toc-heading">
+          <h2 id="toc-heading">On this page</h2>
+          <ul>
+            <li><a href="#steps">Fix a file, step by step</a></li>
+            <li><a href="#titles">Writing slide titles</a></li>
+            <li><a href="#alt-text">Writing alt text</a></li>
+            <li><a href="#ai-assistant">Drafting with an AI assistant</a></li>
+            <li><a href="#labels">What the slide list tells you</a></li>
+            <li><a href="#saved-work">Saved work</a></li>
+            <li><a href="#limits">What this page doesn't check</a></li>
+            <li><a href="#problems">If something goes wrong</a></li>
+          </ul>
+        </nav>
+
+        <section id="steps" tabindex="-1" aria-labelledby="steps-heading">
+          <h2 id="steps-heading">Fix a file, step by step</h2>
+          <ol class="help-steps">
+            <li>
+              <strong>Open your file.</strong> Choose a .pptx file, or drag one onto the box on the start page. If
+              your file ends in .ppt, open it in PowerPoint first and save it as .pptx.
+            </li>
+            <li>
+              <strong>Scroll through the slides.</strong> Every slide is on one long page, with its text, a title box
+              and a box for each picture. The list beside the slides jumps to any slide and shows what each one is
+              missing.
+            </li>
+            <li>
+              <strong>Type a title</strong> on every slide flagged "missing". See
+              <a href="#titles">writing slide titles</a>.
+            </li>
+            <li>
+              <strong>Describe each picture</strong> flagged "needs alt text", or check "decorative, no description
+              needed" if it's only there for looks. See <a href="#alt-text">writing alt text</a>.
+            </li>
+            <li>
+              <strong>Check the document title</strong> under "File properties" at the bottom of the slide list. Ally
+              copies it into the PDF and HTML versions students download, so it should name the lecture, not the
+              file.
+            </li>
+            <li>
+              <strong>Download the fixed copy.</strong> "Download fixed copy" saves a new file with "(fixed)" added
+              to its name. Your original file isn't changed.
+            </li>
+            <li>
+              <strong>Upload the fixed copy to Canvas</strong> and check its Ally score. Ally checks more than this
+              page does, so it may still flag things like text contrast.
+            </li>
+          </ol>
+          <p>
+            The line under the file name counts what's left, for example "2 slides still need a title". When it says
+            every slide has a title and every picture has alt text, you're done with this page.
+          </p>
+        </section>
+
+        <section id="titles" tabindex="-1" aria-labelledby="titles-heading">
+          <h2 id="titles-heading">Writing slide titles</h2>
+          <p>
+            Screen reader users move through a deck by its slide titles, and Ally turns them into headings in the
+            HTML and PDF versions. A good title says what the slide is about.
+          </p>
+          <ul>
+            <li>Use a few words that tell this slide apart from the others, like "Gestalt principle: proximity".</li>
+            <li>Don't repeat the same title on every slide. If slides continue a topic, add "(continued)" or a part number.</li>
+            <li>For a slide that's one artwork, the artist and title of the work make a good slide title.</li>
+          </ul>
+          <h3>Why some titles go above the slide</h3>
+          <p>
+            On slides that are mostly picture, the fixer puts the title just above the slide's edge. It won't show
+            when you present, but screen readers and Ally still find it. In sandbox tests, a title typed on top of a
+            full-slide picture was flagged by Ally for low contrast, and the same title above the slide wasn't. The
+            hint under each title box tells you which kind of slide you're on.
+          </p>
+        </section>
+
+        <section id="alt-text" tabindex="-1" aria-labelledby="alt-heading">
+          <h2 id="alt-heading">Writing alt text</h2>
+          <p>
+            Alt text is what a screen reader says in place of a picture. Write what a student would miss if they
+            couldn't see it. The slide's own text is shown above the boxes so you can see what's already said.
+          </p>
+          <ul>
+            <li>Describe what the picture shows and why it's on this slide. One or two sentences is usually enough.</li>
+            <li>Skip "image of" or "picture of". Screen readers already say it's a picture.</li>
+            <li>If the picture contains words that matter, type those words.</li>
+            <li>If the slide text already says everything the picture shows, a short description is fine.</li>
+            <li>
+              For artwork, describe what's visible and leave out the title and artist. Alt text gives a screen reader
+              user what a sighted viewer sees. Put the title and artist in the slide title or slide text instead.
+            </li>
+          </ul>
+          <h3>Decorative pictures</h3>
+          <p>
+            Check "decorative, no description needed" for pictures that add nothing to the content, like a border,
+            a background flourish or a logo repeated on every slide. Screen readers skip them.
+          </p>
+          <h3>The same picture on several slides</h3>
+          <p>
+            When a picture appears more than once, a checkbox under it offers to use your description on the other
+            slides too. It's on by default. It only fills boxes you haven't typed in yourself.
+          </p>
+          <h3>"PowerPoint guessed this"</h3>
+          <p>
+            Older versions of PowerPoint wrote alt text automatically, ending in "Description automatically
+            generated". Nobody checked these, so the fixer flags them. Read each one against the picture
+            and rewrite it. Once you remove the "Description automatically generated" line, it counts as checked.
+          </p>
+          <h3>Pictures used as a slide background</h3>
+          <p>
+            A background picture can't hold alt text. If it matters to the content, describe it in the slide title or
+            the speaker notes. The fixer tells you when a slide has one.
+          </p>
+        </section>
+
+        <section id="ai-assistant" tabindex="-1" aria-labelledby="ai-heading">
+          <h2 id="ai-heading">Drafting with an AI assistant</h2>
+          <p>
+            Because the fixer is a web page, an AI assistant in the browser, such as Gemini in Chrome, can draft the
+            titles and alt text for you to review. Unlike PowerPoint's Generate alt text button, you give the
+            assistant a prompt that says what you want. For a deck of artwork, the prompt can follow best practices
+            for describing art.
+          </p>
+          <ol class="help-steps">
+            <li>Open your file in the fixer.</li>
+            <li>Open the assistant in the same browser window and paste your prompt.</li>
+            <li>
+              Let it work down the page. When it's done, read every title and description against its picture
+              before you download. The assistant can be confidently wrong, and only a person looking at the picture
+              will catch it.
+            </li>
+          </ol>
+          <p class="note">
+            The assistant reads the page, including the pictures, and sends it to the company that runs the
+            assistant. The fixer itself never uploads your file, but the assistant does see it. Only use one on a
+            deck you're allowed to share with that service.
+          </p>
+          <h3>Example prompt for art slides</h3>
+          <details class="prompt">
+            <summary>Show the prompt</summary>
+            <button type="button" id="copy-prompt" class="quiet">Copy the prompt</button>
+            <span id="copy-status" class="hint" role="status"></span>
+            <pre id="art-prompt">This web app is designed to fix PowerPoint slides for accessibility. Every slide is on this one page, one section after another. Work down the page from Slide 1 to the last slide. For each slide the list on the left marks "Needs title" or "Needs alt text", fill in the slide title box and the description box for each picture, then scroll down to the next slide. Keep going until no slide in the list says "Needs". Don't download the file.
+
+These are art lecture slides. Write each picture description by these rules:
+
+1. Open with the medium and form: "Oil painting of", "Bronze sculpture of", "Charcoal drawing of", "Collage of". Use "Photograph of" only when the artwork itself is a photograph, not for a photo of a painting or an installation. Never open with "Image of", "Picture of" or "Installation view of".
+2. Put the most important thing in the picture first, then supporting detail: subject, action, setting.
+3. Include color, light and composition when they carry meaning. In artwork they usually do.
+4. Write one sentence of 15 to 30 words.
+5. Type out any words visible inside the artwork exactly as they appear, in quotation marks.
+6. Describe what's there, don't interpret it. Write "clenched jaw, gaze turned away", not "looks angry". The exception is when a little interpretation is needed to make sense of what's shown.
+7. Don't repeat what the slide text already says.
+8. Never name a title, artist, date, art movement or museum, even if you recognize the work. If you recognize it, use that knowledge only to describe more accurately, for example "gold leaf" instead of "yellow patterning". Don't write anything that assumes the reader already knows the work.
+9. If a description is already in the box and it ends with "Description automatically generated", replace it. It can be considered unreliable.
+
+For each slide title, write a few plain words that say what the slide is about, so someone using a screen reader can tell the slides apart. Don't number them, and don't use the artist's name or the artwork's title.</pre>
+          </details>
+          <p>
+            The prompt keeps artist names out of the titles too, because AI assistants misidentify artwork. Once
+            you've checked the drafts, add the title and artist to the slide titles yourself where they belong.
+          </p>
+        </section>
+
+        <section id="labels" tabindex="-1" aria-labelledby="labels-heading">
+          <h2 id="labels-heading">What the slide list tells you</h2>
+          <dl class="help-terms">
+            <dt>Needs title, Needs alt text</dt>
+            <dd>Something is still missing on this slide.</dd>
+            <dt>Filled in</dt>
+            <dd>This slide was missing something, and you've added it.</dd>
+            <dt>Nothing missing</dt>
+            <dd>
+              This slide already had a title and alt text. That doesn't mean the slide is fully accessible, only that
+              the two things this page checks are there.
+            </dd>
+          </dl>
+          <p>
+            "Only slides missing a title or alt text" hides the rest of the slides. It's off at first, because the
+            slides around one that needs work often explain what its picture is for.
+          </p>
+        </section>
+
+        <section id="saved-work" tabindex="-1" aria-labelledby="saved-heading">
+          <h2 id="saved-heading">Saved work</h2>
+          <p>
+            What you type is saved in this browser as you go. To pick up later, come back to the fixer and open the
+            same file again. You'll see "Picked up where you left off".
+          </p>
+          <ul>
+            <li>It only works for the exact same file. If you edit the deck in PowerPoint, the fixer starts fresh.</li>
+            <li>It only works in the same browser on the same computer.</li>
+            <li>Saved work is removed after 30 days.</li>
+            <li>"Start over from the file" throws away your saved typing for that file.</li>
+            <li>
+              If other people use the same computer login, open "Saved work" at the bottom of the slide list and
+              choose "Delete saved work for this file" when you're finished.
+            </li>
+          </ul>
+        </section>
+
+        <section id="limits" tabindex="-1" aria-labelledby="limits-heading">
+          <h2 id="limits-heading">What this page doesn't check</h2>
+          <p>The fixer checks slide titles and alt text only. Use PowerPoint's Check Accessibility for the rest:</p>
+          <ul>
+            <li>charts, tables, SmartArt and shapes filled with a picture (the fixer points these out)</li>
+            <li>text contrast</li>
+            <li>reading order</li>
+          </ul>
+        </section>
+
+        <section id="problems" tabindex="-1" aria-labelledby="problems-heading">
+          <h2 id="problems-heading">If something goes wrong</h2>
+          <dl class="help-terms">
+            <dt>"Couldn't open that file"</dt>
+            <dd>
+              The fixer opens .pptx files up to 250 MB. If yours is larger, compress the pictures in PowerPoint
+              (Picture Format, then Compress Pictures) and save again. If the file is damaged, open it in PowerPoint
+              and save a new copy.
+            </dd>
+            <dt>"No preview for this picture"</dt>
+            <dd>The picture is in a format the browser can't show. Open the deck in PowerPoint to see which picture it is.</dd>
+            <dt>"This browser isn't saving your work"</dt>
+            <dd>
+              The browser is blocking storage, usually because of a privacy setting. Your typing still works, but
+              download the fixed copy before you close the tab.
+            </dd>
+            <dt>The download didn't appear</dt>
+            <dd>Check your browser's Downloads folder for a file ending in "(fixed).pptx".</dd>
+          </dl>
+        </section>
+
+        <p class="help-back"><a href="#" class="back-link">Back to the fixer</a></p>
       </section>
     </main>
 

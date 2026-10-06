@@ -22,6 +22,7 @@ You open a .pptx, the page shows every slide on one scrolling page, you type tit
   - If other people use the same computer login, "Delete saved work for this file" removes it and stops saving until the file is reopened.
   - If the browser blocks storage, the page says so and warns before the tab closes.
 - **Safe text.** Characters XML doesn't allow, which usually arrive by pasting from a PDF, are removed before they're written, so they can't corrupt the file.
+- **Help.** The header's Help link walks through fixing a file, writing titles and alt text, drafting them with a browser AI assistant (with a copyable example prompt for art slides), what the slide list labels mean, and common problems. Help is a section of `index.html`, shown in place of the fixer, so an open deck stays open while it's read. The browser's Back button and "Back to the fixer" both return to the same spot. When a label, limit or message in `src/main.js` changes, update the help text too.
 - **Size limits.** Files over 250 MB, files that unpack to more than 500 MB, and files with more than 20,000 parts are refused with a plain message, so a broken or crafted file can't freeze the tab. TIFF previews over 50 million pixels are skipped.
 
 ### What it doesn't do
@@ -109,7 +110,6 @@ Not yet tried with a real screen reader.
 - `src/tiff-worker.js` decodes TIFF previews with [image-in-browser](https://github.com/yegor-pelykh/image-in-browser) in a worker, so the page doesn't freeze. It only loads when a deck has TIFFs.
 - `src/saved-work.js` saves and restores typed edits in localStorage. Every storage call is guarded, because storage can be blocked or full.
 - `src/main.js` is the interface, built with plain DOM calls.
-
 Dependencies are pinned to exact versions.
 
 ## Contributing
