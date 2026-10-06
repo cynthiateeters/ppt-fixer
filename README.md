@@ -10,7 +10,7 @@ You open a .pptx, the page shows every slide on one scrolling page, you type tit
 
 - **Slide titles.** Every untitled slide gets a box to type a title. On slides where a picture covers the slide or overlaps the title area, the title is placed just above the slide. It doesn't show when presenting, but screen readers and Ally still find it.
 - **Alt text.** Every picture gets a preview and a text box. You can mark a picture as decorative instead. When the same picture appears on several slides, one description can fill them all.
-- **Every slide on one page.** Each slide has its own section with its text, title box and picture boxes, one after another. There's no Next button. The list beside it jumps to a slide and highlights the one at the top of the screen. Typing never rebuilds the page, so the boxes stay where they are. That matters for a browser assistant like Gemini in Chrome filling in the whole deck, which got stuck on the Next button when the page showed one slide at a time. Each click replaced the whole slide and moved the button, sometimes below the bottom of the screen.
+- **Every slide on one page.** Each slide has its own section with its text, title box and picture boxes, one after another. There's no Next button. The list beside it jumps to a slide and highlights the one at the top of the screen. Typing never rebuilds the page, so the boxes stay where they are. That matters for a browser assistant like Gemini in Chrome filling in the whole deck by clicking, which got stuck on the Next button when the page showed one slide at a time. Each click replaced the whole slide and moved the button, sometimes below the bottom of the screen.
 - **Slide status.** Each slide in the list says what it's missing ("Needs title", "Needs alt text"), "Filled in" once you've added it, or "Nothing missing". It never says a slide is fine, because the page checks titles and alt text only, and it says so above the list. "Only slides missing a title or alt text" hides the rest. It's off by default, because a slide that needs a description often depends on the ones around it, such as a section slide or a caption.
 - **PowerPoint's guesses.** Older PowerPoint saved automatic alt text ending in "Description automatically generated". The page treats that as missing and flags it "PowerPoint guessed this" until you rewrite it or remove that line. Text you don't touch is saved unchanged. Only English is recognized for now. Other languages can be added in `AUTO_ALT_MARKERS` in `src/pptx.js`, using the exact line from a real deck.
 - **File properties.** The document title can be corrected. Ally copies it into the PDF and HTML versions students download.
@@ -22,7 +22,7 @@ You open a .pptx, the page shows every slide on one scrolling page, you type tit
   - If other people use the same computer login, "Delete saved work for this file" removes it and stops saving until the file is reopened.
   - If the browser blocks storage, the page says so and warns before the tab closes.
 - **Safe text.** Characters XML doesn't allow, which usually arrive by pasting from a PDF, are removed before they're written, so they can't corrupt the file.
-- **Help.** The Help button in the header walks through fixing a file, writing titles and alt text, drafting them with a browser AI assistant (with a copyable example prompt for art slides), what the slide list labels mean, and common problems. Help is a section of `index.html`, shown in place of the fixer, so an open deck stays open while it's read. The browser's Back button and "Back to the fixer" both return to the same spot. When a label, limit or message in `src/main.js` changes, update the help text too.
+- **Help.** The Help button in the header walks through fixing a file, writing titles and alt text, drafting them with a browser AI assistant (with a copyable example prompt for art slides, and the tools an assistant like ChatGPT's desktop app can use), what the slide list labels mean, and common problems. Help is a section of `index.html`, shown in place of the fixer, so an open deck stays open while it's read. The browser's Back button and "Back to the fixer" both return to the same spot. When a label, limit or message in `src/main.js` changes, update the help text too.
 - **Size limits.** Files over 250 MB, files that unpack to more than 500 MB, and files with more than 20,000 parts are refused with a plain message, so a broken or crafted file can't freeze the tab. TIFF previews over 50 million pixels are skipped.
 
 ### What it doesn't do
@@ -114,6 +114,7 @@ Not yet tried with a real screen reader.
 ## Not tested yet
 
 - **Decks from other departments.** It's only been run against decks from Arts and Design courses.
+- **The AI agent tools with a real agent.** They've been checked in Chrome against a stand-in for the WebMCP API, not yet with ChatGPT's desktop app or Chrome's WebMCP flag. Whether ChatGPT's site tools work in its Windows app isn't confirmed.
 
 ## How it works
 
@@ -122,6 +123,7 @@ Not yet tried with a real screen reader.
 - `src/tiff-worker.js` decodes TIFF previews with [image-in-browser](https://github.com/yegor-pelykh/image-in-browser) in a worker, so the page doesn't freeze. It only loads when a deck has TIFFs.
 - `src/saved-work.js` saves and restores typed edits in localStorage. Every storage call is guarded, because storage can be blocked or full.
 - `src/main.js` is the interface, built with plain DOM calls.
+- `src/agent-tools.js` offers four tools to browser AI agents through [WebMCP](https://developer.chrome.com/docs/ai/webmcp): `list_slides_needing_work`, `show_slide`, `set_slide_title` and `set_picture_description`. Edits go through the same path as typing, so the boxes, flags, slide list and saved work stay in step. There's no tool to download, open a file or mark a picture decorative, so a person still does those. In a browser without WebMCP the module does nothing. To try it in Chrome, turn on `chrome://flags/#enable-webmcp-testing` and call the tools from Chrome's Model Context Tool Inspector extension.
 Dependencies are pinned to exact versions.
 
 ## Contributing

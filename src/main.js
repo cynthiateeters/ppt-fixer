@@ -20,6 +20,7 @@ import {
   pruneOld,
   storageAvailable,
 } from "./saved-work.js";
+import { registerAgentTools } from "./agent-tools.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -93,6 +94,8 @@ function visibleSlides() {
 // Every picture's box, so a description shared across slides shows up in boxes already on the page.
 const pictureViews = new Map();
 const viewKey = (slideNumber, index) => `${slideNumber}-${index}`;
+// Every title box, so a title an AI agent sets through a tool shows up on the page.
+const titleViews = new Map();
 
 // ---------- rendering ----------
 
@@ -241,6 +244,10 @@ function titleSection(slide) {
       updateFlag();
       changed();
     },
+  });
+  titleViews.set(slide.number, () => {
+    input.value = e.title;
+    updateFlag();
   });
   return h(
     "section",
@@ -464,6 +471,7 @@ function slideSection(slide) {
 // Typing never rebuilds a slide, so the boxes stay put for a person or an assistant filling them in.
 function renderSlides() {
   pictureViews.clear();
+  titleViews.clear();
   $("slides").replaceChildren(...state.deck.slides.map(slideSection));
   applyFilter();
 }
@@ -631,6 +639,7 @@ $("close-deck").addEventListener("click", () => {
   clearPreviews();
   $("slides").replaceChildren();
   pictureViews.clear();
+  titleViews.clear();
   $("file").value = "";
   $("editor").hidden = true;
   $("start").hidden = false;
@@ -725,5 +734,31 @@ $("copy-prompt").addEventListener("click", async () => {
 
 window.addEventListener("hashchange", showView);
 showView();
+
+// ---------- tools for AI agents (WebMCP) ----------
+
+registerAgentTools({
+  getDeck: () => state.deck,
+  getEdits: () => state.edits,
+  showSlide(n) {
+    if (!$("help").hidden) {
+      // Leave help now, so the hashchange that follows finds nothing to do and doesn't undo the scroll.
+      location.hash = "";
+      showView();
+    }
+    if ($(`slide-${n}`).hidden) {
+      // The "only slides that need work" filter hides it, so show every slide.
+      state.onlyNeedsWork = false;
+      $("only-needs-work").checked = false;
+      renderList();
+      applyFilter();
+    }
+    goTo(n - 1);
+  },
+  shareChecked: (n, index) => $(`alt-${n}-${index}-share`)?.checked ?? true,
+  refreshTitle: (n) => titleViews.get(n)?.(),
+  refreshPicture: (n, index) => pictureViews.get(viewKey(n, index))?.(),
+  changed,
+});
 
 pruneOld();
