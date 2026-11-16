@@ -11,3 +11,10 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "no-referrer"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# ppt-fixer is retired. Every path goes to Deck Rescue.
+[[redirects]]
+  from = "/*"
+  to = "https://rescuesuite.page/deck/"
+  status = 301
+  force = true
