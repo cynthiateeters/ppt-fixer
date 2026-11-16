@@ -1,3 +1,5 @@
+> **ppt-fixer has moved to Deck Rescue.** This tool is retired. Use [Deck Rescue](https://rescuesuite.page/deck/) instead, which fixes slide titles and alt text and does more.
+
 # ppt-fixer
 
 A web page that fixes two problems Ally flags in image-heavy PowerPoint decks, missing slide titles and missing alt text.
